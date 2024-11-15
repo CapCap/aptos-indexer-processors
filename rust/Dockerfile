@@ -62,7 +62,8 @@ RUN cargo build --bin processor --package processor --release \
     && cargo install diesel_cli --no-default-features --features postgres \
     && mkdir /data \
     && chown postgres:postgres /data \
-    && echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen && locale-gen \
+    && echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen \
+    && locale-gen \
     && su - postgres -c "/usr/lib/postgresql/16/bin/initdb /data \
         --locale-provider=libc \
         --locale=en_US.UTF-8 \

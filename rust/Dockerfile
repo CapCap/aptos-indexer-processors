@@ -40,7 +40,7 @@ RUN cargo build \
     --release \
     && cp target/release/indexer-metrics /usr/local/bin
 
-# Cache crate dependencies, then compile processor binary.
+# Cache crate dependencies, compile processor binary, pre-load migrations.
 FROM base AS processor-builder
 COPY --from=processor-planner app/recipe.json recipe.json
 RUN cargo chef cook \

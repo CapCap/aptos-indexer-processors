@@ -48,25 +48,21 @@ RUN cargo chef cook \
     --package processor \
     --release
 COPY . .
-# hadolint ignore=DL4006
-RUN cargo build \
-    --bin processor \
-    --package processor \
-    --release \
+# hadolint ignore=DL3003,DL4006
+RUN cargo build --bin processor --package processor --release \
     && cp target/release/processor /usr/local/bin \
     && apt-get update && apt-get install -y --no-install-recommends \
         postgresql-common=248* \
         && rm -rf /var/lib/apt/lists/* \
     && yes | /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh \
     && apt-get update && apt-get install -y --no-install-recommends \
-        postgresql-16=16.4* \
-        postgresql-client-16=16.4* \
+        postgresql-16=16* \
+        postgresql-client-16=16* \
         && rm -rf /var/lib/apt/lists/* \
     && cargo install diesel_cli --no-default-features --features postgres \
     && mkdir /data \
     && chown postgres:postgres /data \
-    && echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen \
-    && locale-gen \
+    && echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen && locale-gen \
     && su - postgres -c "/usr/lib/postgresql/16/bin/initdb /data \
         --locale-provider=libc \
         --locale=en_US.UTF-8 \
@@ -75,9 +71,9 @@ RUN cargo build \
         \"CREATE ROLE emojicoin \
         ENCRYPTED PASSWORD 'emojicoin' \
         SUPERUSER CREATEDB CREATEROLE \
-        INHERIT LOGIN;\""
-WORKDIR /app/processor/src/db/postgres
-RUN sleep 4 \
+        INHERIT LOGIN;"\" \
+    && cd processor/src/db/postgres \
+    && sleep 5 \
     && diesel --database-url \
         postgres://emojicoin:emojicoin@localhost/emojicoin setup \
     && pg_dumpall -d \

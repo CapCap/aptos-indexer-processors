@@ -56,12 +56,12 @@ RUN cargo build \
     && cp target/release/processor /usr/local/bin \
     && apt-get update && apt-get install -y --no-install-recommends \
         postgresql-common=248* \
-    && rm -rf /var/lib/apt/lists/* \
+        && rm -rf /var/lib/apt/lists/* \
     && yes | /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh \
     && apt-get update && apt-get install -y --no-install-recommends \
         postgresql-16=16.4* \
         postgresql-client-16=16.4* \
-    && rm -rf /var/lib/apt/lists/* \
+        && rm -rf /var/lib/apt/lists/* \
     && cargo install diesel_cli --no-default-features --features postgres \
     && mkdir /data \
     && chown postgres:postgres /data \

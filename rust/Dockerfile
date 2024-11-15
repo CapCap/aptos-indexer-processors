@@ -48,6 +48,7 @@ RUN cargo chef cook \
     --package processor \
     --release
 COPY . .
+# hadolint ignore=DL4006
 RUN cargo build \
     --bin processor \
     --package processor \
@@ -74,9 +75,9 @@ RUN cargo build \
         \"CREATE ROLE emojicoin \
         ENCRYPTED PASSWORD 'emojicoin' \
         SUPERUSER CREATEDB CREATEROLE \
-        INHERIT LOGIN;\"" \
-    && cd processor/src/db/postgres \
-    && sleep 4 \
+        INHERIT LOGIN;\""
+WORKDIR /app/processor/src/db/postgres
+RUN sleep 4 \
     && diesel --database-url \
         postgres://emojicoin:emojicoin@localhost/emojicoin setup \
     && pg_dumpall -d \

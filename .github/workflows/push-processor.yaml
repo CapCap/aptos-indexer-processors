@@ -23,9 +23,14 @@ jobs:
         context: 'rust'
         file: 'rust/Dockerfile'
         labels: '${{ steps.metadata.outputs.labels }}'
-        platforms: '${{ vars.DOCKER_IMAGE_PLATFORMS }}'
+        platforms: '${{ matrix.platform }}'
         push: 'true'
         tags: '${{ steps.metadata.outputs.tags }}'
+    strategy:
+      fail-fast: 'true'
+      matrix:
+        platform: >-
+          ${{ split(vars.DOCKER_IMAGE_PLATFORMS, ',') }}
     timeout-minutes: 360
 name: 'Build processor Docker image and push to Docker Hub'
 'on':

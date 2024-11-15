@@ -27,7 +27,6 @@ jobs:
         push: 'true'
         tags: '${{ steps.metadata.outputs.tags }}'
     strategy:
-      fail-fast: 'true'
       matrix:
         platform:
         - 'linux/amd64'

@@ -40,7 +40,7 @@ RUN cargo build \
     --release \
     && cp target/release/indexer-metrics /usr/local/bin
 
-# Cache crate dependencies, then compile processor binary.
+# Cache crate dependencies, compile processor binary, pre-load migrations.
 FROM base AS processor-builder
 COPY --from=processor-planner app/recipe.json recipe.json
 RUN cargo chef cook \
@@ -49,26 +49,36 @@ RUN cargo chef cook \
     --release
 COPY . .
 # hadolint ignore=DL3003,DL4006
-RUN cargo build \
-    --bin processor \
-    --package processor \
-    --release \
+RUN cargo build --bin processor --package processor --release \
     && cp target/release/processor /usr/local/bin \
     && apt-get update && apt-get install -y --no-install-recommends \
-       postgresql-common=248* \
-    && rm -rf /var/lib/apt/lists/* \
+        postgresql-common=248* \
+        && rm -rf /var/lib/apt/lists/* \
     && yes | /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh \
     && apt-get update && apt-get install -y --no-install-recommends \
-       postgresql-16=16.4-1.pgdg120* \
-       postgresql-client-16=16.4-1.pgdg120* \
-    && rm -rf /var/lib/apt/lists/* \
+        postgresql-16=16* \
+        postgresql-client-16=16* \
+        && rm -rf /var/lib/apt/lists/* \
     && cargo install diesel_cli --no-default-features --features postgres \
-    && mkdir /data && chown postgres:postgres /data \
-    && echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen && locale-gen \
-    && su - postgres -c "/usr/lib/postgresql/16/bin/initdb /data --locale-provider=libc --locale=en_US.UTF-8 && /usr/lib/postgresql/16/bin/pg_ctl -D /data -l logfile start" \
-    && su - postgres -c "/usr/lib/postgresql/16/bin/psql -c \"CREATE ROLE emojicoin ENCRYPTED PASSWORD 'emojicoin' SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;"\" \
-    && cd processor/src/db/postgres && sleep 4 && diesel --database-url postgres://emojicoin:emojicoin@localhost/emojicoin setup \
-    && pg_dumpall -d postgres://emojicoin:emojicoin@localhost/emojicoin > /db.sql
+    && mkdir /data \
+    && chown postgres:postgres /data \
+    && echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen \
+    && locale-gen \
+    && su - postgres -c "/usr/lib/postgresql/16/bin/initdb /data \
+        --locale-provider=libc \
+        --locale=en_US.UTF-8 \
+        && /usr/lib/postgresql/16/bin/pg_ctl -D /data -l logfile start" \
+    && su - postgres -c "/usr/lib/postgresql/16/bin/psql -c \
+        \"CREATE ROLE emojicoin \
+        ENCRYPTED PASSWORD 'emojicoin' \
+        SUPERUSER CREATEDB CREATEROLE \
+        INHERIT LOGIN;"\" \
+    && cd processor/src/db/postgres \
+    && sleep 5 \
+    && diesel --database-url \
+        postgres://emojicoin:emojicoin@localhost/emojicoin setup \
+    && pg_dumpall -d \
+        postgres://emojicoin:emojicoin@localhost/emojicoin > /db.sql
 
 # Install runtime dependencies, copy over binaries.
 FROM debian:bookworm-slim AS runtime

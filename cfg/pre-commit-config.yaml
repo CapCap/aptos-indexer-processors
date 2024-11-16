@@ -3,8 +3,8 @@ repos:
 -
   hooks:
   -
-    id: 'hadolint-docker'
     files: 'rust/Dockerfile'
+    id: 'hadolint-docker'
   repo: 'https://github.com/hadolint/hadolint'
   rev: 'v2.12.0'
 -
@@ -29,4 +29,14 @@ repos:
     id: 'clippy'
   repo: 'https://github.com/doublify/pre-commit-rust'
   rev: 'v1.0'
+-
+  hooks:
+  -
+    args:
+    - '--config-file'
+    - 'cfg/yamllint-config.yaml'
+    - '--strict'
+    id: 'yamllint'
+  repo: 'https://github.com/adrienverge/yamllint'
+  rev: 'v1.35.1'
 ...

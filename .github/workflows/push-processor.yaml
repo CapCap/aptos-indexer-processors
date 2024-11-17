@@ -44,17 +44,40 @@ jobs:
       with:
         password: '${{ secrets.DOCKERHUB_TOKEN }}'
         username: '${{ secrets.DOCKERHUB_USERNAME }}'
-    - name: 'Push multi-platform image to Docker Hub'
+    - name: 'Debug'
       run: |
         docker system prune -af
+
+        echo "=== Before loading tarballs ==="
+        docker images
+
+        echo "\n=== Loading AMD64 tarball ==="
         docker load --input /tmp/amd64.tar
+
+        echo "\n=== After AMD64 load ==="
+        docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Platform}}"
+
+        echo "\n=== Loading ARM64 tarball ==="
         docker load --input /tmp/arm64.tar
-        IMAGE_REFS=$(docker images -q | xargs -I {} echo "--amend {}")
-        echo "${{ steps.metadata.outputs.tags }}" | while read -r tag; do
-        if [ ! -z "$tag" ]; then
-        docker manifest create $tag $IMAGE_REFS && docker manifest push $tag
-        fi
-        done
+
+        echo "\n=== After ARM64 load ==="
+        docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Platform}}"
+
+        echo "\n=== Metadata tags from previous step ==="
+        echo "${{ steps.metadata.outputs.tags }}"
+    # - name: 'Push multi-platform image to Docker Hub'
+    #   run: |
+    #     docker system prune -af
+    #     docker load --input /tmp/amd64.tar
+    #     docker load --input /tmp/arm64.tar
+    #     AMD64_ID=$(docker images --filter "platform=linux/amd64" -q | head -n1)
+    #     ARM64_ID=$(docker images --filter "platform=linux/arm64" -q | head -n1)
+    #     IMAGE_REFS=$(docker images -q | xargs -I {} echo "--amend {}")
+    #     echo "${{ steps.metadata.outputs.tags }}" | while read -r tag; do
+    #     if [ ! -z "$tag" ]; then
+    #     docker manifest create $tag $IMAGE_REFS && docker manifest push $tag
+    #     fi
+    #     done
     timeout-minutes: 360
 name: 'Push multi-platform processor image to Docker Hub'
 'on':

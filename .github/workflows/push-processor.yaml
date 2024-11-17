@@ -55,13 +55,13 @@ jobs:
     - name: 'Append ARM images to AMD manifest'
       run: |
         echo "${{ steps.metadata.outputs.tags }}" | while read -r tag; do
-          if [ ! -z "$tag" ]; then
-            echo "=== Appending ARM64 image to $tag ==="
-            docker buildx imagetools create --append -t "$tag" "${tag}-arm64"
+        if [ ! -z "$tag" ]; then
+        echo "=== Appending ARM64 image to $tag ==="
+        docker buildx imagetools create --append -t "$tag" "${tag}-arm64"
 
-            echo "=== Inspecting created manifest ==="
-            docker buildx imagetools inspect "$tag"
-          fi
+        echo "=== Inspecting created manifest ==="
+        docker buildx imagetools inspect "$tag"
+        fi
         done
     timeout-minutes: 360
 name: 'Push multi-platform processor image to Docker Hub'

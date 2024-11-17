@@ -40,18 +40,17 @@ jobs:
         platforms: 'linux/arm64'
         push: 'false'
         tags: '${{ steps.metadata.outputs.tags }}'
-      - name: 'Push multi-platform image to Docker Hub'
-            run: |
-              docker system prune -af
-              docker load --input /tmp/amd64.tar
-              docker load --input /tmp/arm64.tar
-              IMAGE_REFS=$(docker images -q | xargs -I {} echo "--amend {}")
-              echo "${{ steps.metadata.outputs.tags }}" | while read -r tag; do
-                if [ ! -z "$tag" ]; then
-                  docker manifest create $tag $IMAGE_REFS
-                  docker manifest push $tag
-                fi
-              done
+    - name: 'Push multi-platform image to Docker Hub'
+      run: |
+        docker system prune -af
+        docker load --input /tmp/amd64.tar
+        docker load --input /tmp/arm64.tar
+        IMAGE_REFS=$(docker images -q | xargs -I {} echo "--amend {}")
+        echo "${{ steps.metadata.outputs.tags }}" | while read -r tag; do
+        if [ ! -z "$tag" ]; then
+        docker manifest create $tag $IMAGE_REFS && docker manifest push $tag
+        fi
+        done
     timeout-minutes: 360
 name: 'Push multi-platform processor image to Docker Hub'
 'on':

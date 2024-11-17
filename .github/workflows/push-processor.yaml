@@ -13,9 +13,11 @@ jobs:
     - id: 'arm64-metadata'
       uses: 'docker/metadata-action@v5'
       with:
+        flavor: |
+          suffix=-arm64,onlatest=true
         images: 'econialabs/emojicoin-dot-fun-indexer-processor'
         tags: |
-          type=match,pattern=emojicoin-processor-v(.*),group=1,suffix=-arm64
+          type=match,pattern=emojicoin-processor-v(.*),group=1
     - name: 'Debug metadata outputs'
       run: |
         echo "Regular tags:"

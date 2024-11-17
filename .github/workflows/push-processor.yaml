@@ -40,14 +40,16 @@ jobs:
         platforms: 'linux/arm64'
         push: 'false'
         tags: '${{ steps.metadata.outputs.tags }}'
+    - uses: 'docker/login-action@v3'
+      with:
+        password: '${{ secrets.DOCKERHUB_TOKEN }}'
+        username: '${{ secrets.DOCKERHUB_USERNAME }}'
     - name: 'Push multi-platform image to Docker Hub'
       run: |
         docker system prune -af
         docker load --input /tmp/amd64.tar
         docker load --input /tmp/arm64.tar
         IMAGE_REFS=$(docker images -q | xargs -I {} echo "--amend {}")
-        docker login \
-        -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_TOKEN }}
         echo "${{ steps.metadata.outputs.tags }}" | while read -r tag; do
         if [ ! -z "$tag" ]; then
         docker manifest create $tag $IMAGE_REFS && docker manifest push $tag

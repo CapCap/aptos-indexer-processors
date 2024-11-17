@@ -44,32 +44,25 @@ jobs:
       with:
         password: '${{ secrets.DOCKERHUB_TOKEN }}'
         username: '${{ secrets.DOCKERHUB_USERNAME }}'
-    - name: 'Debug'
+    # - name: 'Debug'
+    #   run: |
+    #     docker system prune -af
+    #     echo "=== Before loading tarballs ==="
+    #     docker images
+    #     echo "\n=== Loading AMD64 tarball ==="
+    #     docker load --input /tmp/amd64.tar
+    #     echo "\n=== After AMD64 load ==="
+    #     docker images
+    #     echo "\n=== Loading ARM64 tarball ==="
+    #     docker load --input /tmp/arm64.tar
+    #     echo "\n=== After ARM64 load ==="
+    #     docker images
+    #     echo "\n=== Metadata tags from previous step ==="
+    #     echo "${{ steps.metadata.outputs.tags }}"
+    - name: 'Push multi-platform image to Docker Hub'
       run: |
         docker system prune -af
 
-        echo "=== Before loading tarballs ==="
-        docker images
-
-        echo "\n=== Loading AMD64 tarball ==="
-        docker load --input /tmp/amd64.tar
-
-        echo "\n=== After AMD64 load ==="
-        docker images
-
-        echo "\n=== Loading ARM64 tarball ==="
-        docker load --input /tmp/arm64.tar
-
-        echo "\n=== After ARM64 load ==="
-        docker images
-
-        echo "\n=== Metadata tags from previous step ==="
-        echo "${{ steps.metadata.outputs.tags }}"
-    - env:
-        DOCKER_CLI_EXPERIMENTAL: enabled
-      name: 'Push multi-platform image to Docker Hub'
-      run: |
-        docker system prune -af
         docker load --input /tmp/amd64.tar
         AMD64_ID=$(docker images -q | head -n1)
         docker tag $AMD64_ID temp-amd64:latest
@@ -84,15 +77,13 @@ jobs:
         echo "${{ steps.metadata.outputs.tags }}" | while read -r tag; do
         if [ ! -z "$tag" ]; then
 
-        echo "Creating manifest for $tag"
+        echo "Creating multi-arch image for $tag"
+        docker buildx imagetools create  -t $tag \
+          --append temp-amd64:latest --append temp-arm64:latest
 
-        docker manifest create $tag \
-        --amend temp-amd64:latest --amend temp-arm64:latest
-        docker manifest annotate $tag temp-amd64:latest --os linux --arch amd64
-        docker manifest annotate $tag temp-arm64:latest --os linux --arch arm64
+        echo "Inspecting created image"
+        docker buildx imagetools inspect $tag
 
-        echo "Pushing manifest for $tag"
-        docker manifest push $tag
         fi
         done
     timeout-minutes: 360

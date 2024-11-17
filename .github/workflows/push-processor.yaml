@@ -39,6 +39,7 @@ jobs:
         outputs: 'type=docker,dest=/tmp/arm64.tar'
         platforms: 'linux/arm64'
         push: 'false'
+        tags: '${{ steps.metadata.outputs.tags }}'
     - name: 'Overwrite AMD image on Docker Hub with multi-platform image'
       run: |
         docker system prune -af

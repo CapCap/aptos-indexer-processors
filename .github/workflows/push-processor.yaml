@@ -16,23 +16,39 @@ jobs:
       with:
         password: '${{ secrets.DOCKERHUB_TOKEN }}'
         username: '${{ secrets.DOCKERHUB_USERNAME }}'
-    - uses: 'docker/build-push-action@v6'
+    - name: 'Push AMD image to Docker Hub and store locally'
+      uses: 'docker/build-push-action@v6'
       with:
         cache-from: 'type=gha'
         cache-to: 'type=gha,mode=max'
         context: 'rust'
         file: 'rust/Dockerfile'
-        labels: '${{ steps.metadata.outputs.labels }}'
-        platforms: '${{ matrix.platform }}'
+        outputs: 'type=docker,dest=/tmp/amd64.tar'
+        platforms: 'linux/amd64'
         push: 'true'
         tags: '${{ steps.metadata.outputs.tags }}'
-    strategy:
-      matrix:
-        platform:
-        - 'linux/amd64'
-        - 'linux/arm64'
+    - name: 'Clear Docker cache to free up space for ARM build'
+      run: 'docker system prune -af'
+    - name: 'Build ARM image and store locally'
+      uses: 'docker/build-push-action@v6'
+      with:
+        cache-from: 'type=gha'
+        cache-to: 'type=gha,mode=max'
+        context: 'rust'
+        file: 'rust/Dockerfile'
+        outputs: 'type=docker,dest=/tmp/arm64.tar'
+        platforms: 'linux/arm64'
+        push: 'false'
+    - name: 'Overwrite AMD image on Docker Hub with multi-platform image'
+      run: |
+        docker system prune -af
+        docker load --input /tmp/amd64.tar
+        docker load --input /tmp/arm64.tar
+        docker manifest create ${{ steps.metadata.outputs.tags }} \
+        $(docker images -q | xargs -I {} echo "--amend {}") \
+        docker manifest push ${{ steps.metadata.outputs.tags }}
     timeout-minutes: 360
-name: 'Build processor Docker image and push to Docker Hub'
+name: 'Push multi-platform processor image to Docker Hub'
 'on':
   push:
     tags:

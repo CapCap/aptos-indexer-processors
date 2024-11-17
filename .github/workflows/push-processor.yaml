@@ -55,13 +55,13 @@ jobs:
         docker load --input /tmp/amd64.tar
 
         echo "\n=== After AMD64 load ==="
-        docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Platform}}"
+        docker images
 
         echo "\n=== Loading ARM64 tarball ==="
         docker load --input /tmp/arm64.tar
 
         echo "\n=== After ARM64 load ==="
-        docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Platform}}"
+        docker images
 
         echo "\n=== Metadata tags from previous step ==="
         echo "${{ steps.metadata.outputs.tags }}"

@@ -65,7 +65,9 @@ jobs:
 
         echo "\n=== Metadata tags from previous step ==="
         echo "${{ steps.metadata.outputs.tags }}"
-    - name: 'Push multi-platform image to Docker Hub'
+    - env:
+        DOCKER_CLI_EXPERIMENTAL: enabled
+      name: 'Push multi-platform image to Docker Hub'
       run: |
         docker system prune -af
         docker load --input /tmp/amd64.tar

@@ -16,7 +16,7 @@ jobs:
       with:
         password: '${{ secrets.DOCKERHUB_TOKEN }}'
         username: '${{ secrets.DOCKERHUB_USERNAME }}'
-    - name: 'Push AMD image to Docker Hub and store locally'
+    - name: 'Build AMD image, push to Docker Hub, and store locally'
       uses: 'docker/build-push-action@v6'
       with:
         cache-from: 'type=gha'
@@ -40,14 +40,18 @@ jobs:
         platforms: 'linux/arm64'
         push: 'false'
         tags: '${{ steps.metadata.outputs.tags }}'
-    - name: 'Overwrite AMD image on Docker Hub with multi-platform image'
-      run: |
-        docker system prune -af
-        docker load --input /tmp/amd64.tar
-        docker load --input /tmp/arm64.tar
-        docker manifest create ${{ steps.metadata.outputs.tags }} \
-          $(docker images -q | xargs -I {} echo "--amend {}")
-        docker manifest push ${{ steps.metadata.outputs.tags }}
+      - name: 'Push multi-platform image to Docker Hub'
+            run: |
+              docker system prune -af
+              docker load --input /tmp/amd64.tar
+              docker load --input /tmp/arm64.tar
+              IMAGE_REFS=$(docker images -q | xargs -I {} echo "--amend {}")
+              echo "${{ steps.metadata.outputs.tags }}" | while read -r tag; do
+                if [ ! -z "$tag" ]; then
+                  docker manifest create $tag $IMAGE_REFS
+                  docker manifest push $tag
+                fi
+              done
     timeout-minutes: 360
 name: 'Push multi-platform processor image to Docker Hub'
 'on':

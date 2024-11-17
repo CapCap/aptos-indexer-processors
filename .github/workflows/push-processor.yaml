@@ -76,12 +76,16 @@ jobs:
         ARM64_ID=$(docker images -q | grep -v $AMD64_ID | head -n1)
         docker tag $ARM64_ID temp-arm64:latest
 
+        echo "${{ secrets.DOCKERHUB_TOKEN }}" | \
+        docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
         echo "${{ steps.metadata.outputs.tags }}" | while read -r tag; do
         if [ ! -z "$tag" ]; then
+
         echo "Creating manifest for $tag"
+
         docker manifest create $tag \
         --amend temp-amd64:latest --amend temp-arm64:latest
-
         docker manifest annotate $tag temp-amd64:latest --os linux --arch amd64
         docker manifest annotate $tag temp-arm64:latest --os linux --arch arm64
 

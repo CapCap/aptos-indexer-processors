@@ -63,27 +63,40 @@ jobs:
       run: |
         docker system prune -af
 
+        echo "=== Loading AMD64 image ==="
         docker load --input /tmp/amd64.tar
         AMD64_ID=$(docker images -q | head -n1)
         docker tag $AMD64_ID temp-amd64:latest
+        echo "AMD64 image details:"
+        docker inspect temp-amd64:latest
 
+        echo "=== Loading ARM64 image ==="
         docker load --input /tmp/arm64.tar
         ARM64_ID=$(docker images -q | grep -v $AMD64_ID | head -n1)
         docker tag $ARM64_ID temp-arm64:latest
+        echo "ARM64 image details:"
+        docker inspect temp-arm64:latest
+
+        echo "=== Current images ==="
+        docker images
 
         echo "${{ secrets.DOCKERHUB_TOKEN }}" | \
         docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
         echo "${{ steps.metadata.outputs.tags }}" | while read -r tag; do
         if [ ! -z "$tag" ]; then
+        echo "=== Creating multi-arch image for $tag ==="
+        echo "Source images:"
+        docker inspect temp-amd64:latest
+        docker inspect temp-arm64:latest
 
-        echo "Creating multi-arch image for $tag"
-        docker buildx imagetools create  -t $tag \
-          --append temp-amd64:latest --append temp-arm64:latest
+        echo "=== Running buildx imagetools create with debug ==="
+        docker buildx imagetools create -t $tag \
+          --append temp-amd64:latest \
+          --append temp-arm64:latest --debug
 
-        echo "Inspecting created image"
+        echo "=== Attempting to inspect created image ==="
         docker buildx imagetools inspect $tag
-
         fi
         done
     timeout-minutes: 360

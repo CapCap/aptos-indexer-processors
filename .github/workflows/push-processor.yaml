@@ -46,7 +46,7 @@ jobs:
         docker load --input /tmp/amd64.tar
         docker load --input /tmp/arm64.tar
         docker manifest create ${{ steps.metadata.outputs.tags }} \
-        $(docker images -q | xargs -I {} echo "--amend {}") \
+          $(docker images -q | xargs -I {} echo "--amend {}")
         docker manifest push ${{ steps.metadata.outputs.tags }}
     timeout-minutes: 360
 name: 'Push multi-platform processor image to Docker Hub'

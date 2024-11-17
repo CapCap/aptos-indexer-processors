@@ -44,21 +44,6 @@ jobs:
       with:
         password: '${{ secrets.DOCKERHUB_TOKEN }}'
         username: '${{ secrets.DOCKERHUB_USERNAME }}'
-    # - name: 'Debug'
-    #   run: |
-    #     docker system prune -af
-    #     echo "=== Before loading tarballs ==="
-    #     docker images
-    #     echo "\n=== Loading AMD64 tarball ==="
-    #     docker load --input /tmp/amd64.tar
-    #     echo "\n=== After AMD64 load ==="
-    #     docker images
-    #     echo "\n=== Loading ARM64 tarball ==="
-    #     docker load --input /tmp/arm64.tar
-    #     echo "\n=== After ARM64 load ==="
-    #     docker images
-    #     echo "\n=== Metadata tags from previous step ==="
-    #     echo "${{ steps.metadata.outputs.tags }}"
     - name: 'Push multi-platform image to Docker Hub'
       run: |
         docker system prune -af
@@ -81,23 +66,28 @@ jobs:
         docker images
 
         echo "${{ secrets.DOCKERHUB_TOKEN }}" | \
-        docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+          docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
         echo "${{ steps.metadata.outputs.tags }}" | while read -r tag; do
-        if [ ! -z "$tag" ]; then
-        echo "=== Creating multi-arch image for $tag ==="
-        echo "Source images:"
-        docker inspect temp-amd64:latest
-        docker inspect temp-arm64:latest
+          if [ ! -z "$tag" ]; then
+            echo "=== Creating multi-arch image for $tag ==="
 
-        echo "=== Running buildx imagetools create with debug ==="
-        docker buildx imagetools create -t $tag \
-          --append temp-amd64:latest \
-          --append temp-arm64:latest --debug
+            echo "Source images:"
+            docker inspect temp-amd64:latest
+            docker inspect temp-arm64:latest
 
-        echo "=== Attempting to inspect created image ==="
-        docker buildx imagetools inspect $tag
-        fi
+            echo "=== Running buildx imagetools create ==="
+            docker buildx imagetools create \
+              --debug \
+              --progress=plain \
+              -t "$tag" \
+              --platform linux/amd64,linux/arm64 \
+              temp-amd64:latest \
+              temp-arm64:latest
+
+            echo "=== Attempting to inspect created image ==="
+            docker buildx imagetools inspect "$tag"
+          fi
         done
     timeout-minutes: 360
 name: 'Push multi-platform processor image to Docker Hub'
